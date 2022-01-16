@@ -5,7 +5,7 @@ Public code exercises from the Clinasyst Product team. Thanks for stopping by!
 
 -sql export files included.
 
-- one table to store all transactions and one to store all users
+-one table to store all transactions and one to store all users
 
 -user_id in transactions table used as foreign key to tie it to users table
 
