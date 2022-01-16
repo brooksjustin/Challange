@@ -1,83 +1,98 @@
-<?php 
-/*
-- create a database to hold transaction records and users
-- loads in a list of users from JSON: https://randomuser.me/api/?results=500&nat=us&exc=login,id,nat
-    - add unique users to a database table
-    - as users are loaded, generate a transaction record tied to the user
-    - create a User class to work with the data
-        - use the class to format birthdate to the following format: January 1, 1990
-        - write a method to generate a transaction for the user
-            - in addition to storing user details, transactions should have:
-                - a unique ID
-                - timestamp
-                - amount   
-                - status
-                - payment method (Visa, Mastercard, Discover, American Express, eCheck, or any other new payment method that pops up)
-        - anything else you think would be helpful for working with the data
+<?php
+    include_once 'includes/header.php';
+    include_once 'includes/db.php';
+    include "includes/usersclass.php";
 
-- display a table of transactions with data displayed
-- format transactions in the following format: MM/DD/YYYY
-- default sorted by transaction ID
-- display a table of users with data displayed
-- clicking the user ID takes you to a view that displays that users details and associated transactions
-- note: logic should be built without utilizing PHP libraries
+    $user=new usersclass();
 
-- bonus: add dynamic table sorting   
-- bonus: add pagination
-*/
+    //get users from json
+    $users=$user->getUsers();
+    $sql="SELECT * FROM users";
 
-/*
-If you need help setting up a development environment:
-    Download and run mamp from https://www.mamp.info/en/
+    //add users to database if the database is empty
+    $alreadyIn=mysqli_num_rows(mysqli_query($conn,$sql));
+    if($alreadyIn<=1) {
+        $user->userTable($users);
+    }
 
-    After installation, run the MAMP app (should not need pro)
-    On Mac, located at /Applications/MAMP/MAMP
-    "Start Servers"
+    //get the number of users
+    $userAll=mysqli_query($conn,$sql);
+    $numberOfUser=mysqli_num_rows($userAll);
 
-    Your dev stack should be up and running locally. You can access the database through phpMyAdmin at http://localhost:8888/phpMyAdmin/?lang=en
+    //pagination
+    $usersPerPAge=25;
+    $table='users';
+    $numberOfPages=ceil($numberOfUser/$usersPerPAge);
+    $userLimit=$user->Pagination($usersPerPAge,$table);
 
-    Php and html should live in /Applications/MAMP/htdocs/
-*/
+    //Generate transactions button
+    if (isset($_POST['btnTransactions'])) {
+        foreach ($userAll as $users) {
+            $user->makePayment($users['user_id']);
+        }
+    }
+
 ?>
-<!DOCTYPE html>
-<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
-<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
-<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta name="viewport" content="width=device-width" />
-    
-    <title>Clinasyst Engineering Exercise</title>
-
-    <style type="text/css">
-        .container{ max-width: 1200px; margin: 0 auto; }
-
-        .logo-header{ padding: 2em; }
-        .logo{ margin: 0 auto; min-height: 80px; }
-    </style>
-</head>
-
 <body>
-    <section class="container">
-        <div class="logo-header">
-            <img class="logo" src="https://www.clinasyst.net/wp-content/uploads/2016/06/Clinasyst-NextGen-banner-small-for-web.png" alt="Clinasyst logo" />
-        </div>
-
+    <section>
+                <center>  <a href="transactions.php">Transaction Page</a></center>
+                                <!---button for generating transactions --->
+                    <center><form method="post"> <input type="submit" name="btnTransactions" value="Generate transactions"></form></button></center>
+        <?php
+        //pagination buttons
+        for($i=1;$i<=$numberOfPages;$i++) {
+            echo '<a href="index.php?page='. $i .'">'.$i .'</a> ';
+        }
+        ?>
         <div class="data-table-container">
             <table class="data-table">
-                <thead>
-                    <tr>
-                        <th class="ui-secondary-color">ID</th>
+                    <caption>Users</caption>
+                    <tr class="data-heading">
+                        <th class="ui-secondary-color">user_id</th>
+                        <th>Gender </th>
+                        <th>Title </th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th> Street Number</th>
+                        <th>Street Name</th>
+                        <th>City</th>
+                        <th>State</th>
+                        <th>Country </th>
+                        <th>PostCode </th>
+                        <th>Latitude</th>
+                        <th>Longitude</th>
+                        <th>Time Zone Offset </th>
+                        <th>Time Zone Description </th>
+                        <th>Email </th>
+                        <th>Birthdate</th>
+                        <th>Age</th>
+                        <th>Date Registered</th>
+                        <th>Registered age</th>
+                        <th>Phone</th>
+                        <th>Cell</th>
+                        <th>Picture Large</th>
+                        <th>Picture Medium</th>
+                        <th>Picture Thumbnail</th>
                     </tr>
-                </thead>
-                <tbody>
-                    <tr class="data-row">
-                        <td>12345</td>
-                    </tr>   
-                </tbody>
+                    <?php
+                     //print user table
+                    if($numberOfUser>0){
+                            while($row=mysqli_fetch_assoc($userLimit)){
+                                $i=$row["user_id"];
+                                $largePicture=$row["picturelarge"];
+                                $mediumPicture=$row["picturemedium"];
+                                $thumbnailPicture=$row["picturethumbnail"];
+                                echo "<tr><td><a href='userdetails.php?reference=$i'>".$row["user_id"]."</a></td><td>".$row["gender"]. "</td><td>".$row["nametitle"]."</td><td>".$row["namefirst"]."</td><td>".$row["namelast"]."</td><td>".$row["streetnumber"]."</td><td>".$row["streetname"]."</td><td>".$row["city"]."</td><td>".$row["state"]."</td><td>".$row["country"]."</td><td>".$row["postcode"]."</td><td>".$row["latitude"]."</td><td>".$row["longitude"]."</td><td>".$row["timezoneoffset"]."</td><td>".$row["timezonedescription"]."</td><td>".$row["email"]."</td><td>".$row["dobdate"]."</td><td>".$row["dobage"]."</td><td>".$row["registereddate"]."</td><td>".$row["registeredage"]."</td><td>".$row["phone"]."</td><td>".$row["cell"]."</td><td>"."<img src='$largePicture' alt='picture'"."</td><td>"."<img src='$mediumPicture' alt='picture'"."</td><td>"."<img src='$thumbnailPicture' alt='picture'". "</td></tr>";
+                            }
+                        }
+                        else{
+                            echo"No results";
+                        }
+                        $conn->close();
+                        ?>
             </table>
         </div>
     </section>
+
 </body>
 </html>
